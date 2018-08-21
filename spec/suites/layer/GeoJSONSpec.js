@@ -1,13 +1,14 @@
 describe("L.GeoJSON", function () {
+
 	describe("addData", function () {
-		var geoJSON = {
+		var geojson = {
 			type: 'Feature',
 			properties: {},
 			geometry: {
 				type: 'Point',
 				coordinates: [20, 10, 5]
 			}
-		}, geoJSONEmpty = {
+		}, geojsonEmpty = {
 			type: 'Feature',
 			properties: {},
 			geometry: null
@@ -15,22 +16,45 @@ describe("L.GeoJSON", function () {
 
 		it("sets feature property on member layers", function () {
 			var layer = new L.GeoJSON();
-			layer.addData(geoJSON);
-			expect(layer.getLayers()[0].feature).to.eql(geoJSON);
+			layer.addData(geojson);
+			expect(layer.getLayers()[0].feature).to.eql(geojson);
 		});
 
 		it("normalizes a geometry to a Feature", function () {
 			var layer = new L.GeoJSON();
-			layer.addData(geoJSON.geometry);
-			expect(layer.getLayers()[0].feature).to.eql(geoJSON);
+			layer.addData(geojson.geometry);
+			expect(layer.getLayers()[0].feature).to.eql(geojson);
 		});
 
 		it("accepts geojson with null geometry", function () {
 			var layer = new L.GeoJSON();
-			layer.addData(geoJSONEmpty);
+			layer.addData(geojsonEmpty);
 			expect(layer.getLayers().length).to.eql(0);
 		});
 	});
+
+	describe('resetStyle', function () {
+
+		it('should reset init options', function () {
+			var feature = {
+				type: 'Feature',
+				geometry: {
+					type: 'LineString',
+					coordinates:[[-2.35, 51.38], [-2.38, 51.38]]
+				}
+			};
+			var geojson = L.geoJSON(feature, {weight: 7, color: 'chocolate'});
+			geojson.setStyle({weight: 22, color: 'coral'});
+			var layer = geojson.getLayers()[0];
+			expect(layer.options.weight).to.be(22);
+			expect(layer.options.color).to.be('coral');
+			geojson.resetStyle(layer);
+			expect(layer.options.weight).to.be(7);
+			expect(layer.options.color).to.be('chocolate');
+		});
+
+	});
+
 });
 
 describe("L.Marker#toGeoJSON", function () {
@@ -47,6 +71,14 @@ describe("L.Marker#toGeoJSON", function () {
 		expect(marker.toGeoJSON().geometry).to.eql({
 			type: 'Point',
 			coordinates: [20, 10, 30]
+		});
+	});
+
+	it('should allow specific precisions', function () {
+		var marker = new L.Marker([10.123456, 20.123456, 30.123456]);
+		expect(marker.toGeoJSON(3).geometry).to.eql({
+			type: 'Point',
+			coordinates: [20.123, 10.123, 30.123]
 		});
 	});
 });
@@ -67,6 +99,14 @@ describe("L.Circle#toGeoJSON", function () {
 			coordinates: [20, 10, 30]
 		});
 	});
+
+	it('should allow specific precisions', function () {
+		var circle = new L.Circle([10.1234, 20.1234, 30.1234], 100);
+		expect(circle.toGeoJSON(3).geometry).to.eql({
+			type: 'Point',
+			coordinates: [20.123, 10.123, 30.123]
+		});
+	});
 });
 
 describe("L.CircleMarker#toGeoJSON", function () {
@@ -85,6 +125,14 @@ describe("L.CircleMarker#toGeoJSON", function () {
 			coordinates: [20, 10, 30]
 		});
 	});
+
+	it("should allow specific precisions", function () {
+		var marker = new L.CircleMarker([10.1234, 20.1234]);
+		expect(marker.toGeoJSON(3).geometry).to.eql({
+			type: 'Point',
+			coordinates: [20.123, 10.123]
+		});
+	});
 });
 
 describe("L.Polyline#toGeoJSON", function () {
@@ -101,6 +149,14 @@ describe("L.Polyline#toGeoJSON", function () {
 		expect(polyline.toGeoJSON().geometry).to.eql({
 			type: 'LineString',
 			coordinates: [[20, 10, 30], [5, 2, 10]]
+		});
+	});
+
+	it("should allow specific precisions", function () {
+		var polyline = new L.Polyline([[10.1234, 20.1234, 30.1234], [2.1234, 5.1234, 10.1234]]);
+		expect(polyline.toGeoJSON(3).geometry).to.eql({
+			type: 'LineString',
+			coordinates: [[20.123, 10.123, 30.123], [5.123, 2.123, 10.123]]
 		});
 	});
 });
@@ -124,6 +180,17 @@ describe("L.Polyline (multi) #toGeoJSON", function () {
 			coordinates: [
 				[[20, 10, 30], [5, 2, 10]],
 				[[2, 1, 3], [5, 4, 6]]
+			]
+		});
+	});
+
+	it("should allow specific precisions", function () {
+		var multiPolyline = new L.Polyline([[[10.1234, 20.1234, 30.1234], [2.1234, 5.1234, 10.1234]], [[1.1234, 2.1234, 3.1234], [4.1234, 5.1234, 6.1234]]]);
+		expect(multiPolyline.toGeoJSON(3).geometry).to.eql({
+			type: 'MultiLineString',
+			coordinates: [
+				[[20.123, 10.123, 30.123], [5.123, 2.123, 10.123]],
+				[[2.123, 1.123, 3.123], [5.123, 4.123, 6.123]]
 			]
 		});
 	});
@@ -188,6 +255,13 @@ describe("L.Polygon#toGeoJSON", function () {
 		});
 	});
 
+	it("should allow specific precisions", function () {
+		var polygon = new L.Polygon([[1.1234, 2.1234], [3.1234, 4.1234], [5.1234, 6.1234]]);
+		expect(polygon.toGeoJSON(3).geometry).to.eql({
+			type: 'Polygon',
+			coordinates: [[[2.123, 1.123], [4.123, 3.123], [6.123, 5.123], [2.123, 1.123]]]
+		});
+	});
 });
 
 describe("L.Polygon (multi) #toGeoJSON", function () {
@@ -232,6 +306,15 @@ describe("L.Polygon (multi) #toGeoJSON", function () {
 		});
 	});
 
+	it("should allow specific precisions", function () {
+		var multiPolygon = new L.Polygon([[[[1.1234, 2.1234], [3.1234, 4.1234], [5.1234, 6.1234]]]]);
+		expect(multiPolygon.toGeoJSON(3).geometry).to.eql({
+			type: 'MultiPolygon',
+			coordinates: [
+				[[[2.123, 1.123], [4.123, 3.123], [6.123, 5.123], [2.123, 1.123]]]
+			]
+		});
+	});
 });
 
 describe("L.LayerGroup#toGeoJSON", function () {
@@ -247,8 +330,8 @@ describe("L.LayerGroup#toGeoJSON", function () {
 
 	it("returns a 3D FeatureCollection object", function () {
 		var marker = new L.Marker([10, 20, 30]),
-				polyline = new L.Polyline([[10, 20, 30], [2, 5, 10]]),
-				layerGroup = new L.LayerGroup([marker, polyline]);
+		    polyline = new L.Polyline([[10, 20, 30], [2, 5, 10]]),
+		    layerGroup = new L.LayerGroup([marker, polyline]);
 		expect(layerGroup.toGeoJSON()).to.eql({
 			type: 'FeatureCollection',
 			features: [marker.toGeoJSON(), polyline.toGeoJSON()]
@@ -303,10 +386,29 @@ describe("L.LayerGroup#toGeoJSON", function () {
 			}]
 		};
 
-		expect(L.geoJson(json).toGeoJSON()).to.eql(json);
+		var expected = {
+			"type": "FeatureCollection",
+			"features": [{
+				"type": "Feature",
+				"geometry": {
+					"type": "GeometryCollection",
+					"geometries": [{
+						"type": "LineString",
+						"coordinates": [[-122.442559, 37.806664], [-122.442838, 37.806636]]
+					}, {
+						"type": "LineString",
+						"coordinates": [[-122.442551, 37.806626], [-122.442834, 37.8066]]
+					}]
+				},
+				"properties": {
+					"name": "SF Marina Harbor Master"
+				}
+			}]
+		};
+		expect(L.geoJSON(json).toGeoJSON()).to.eql(expected);
 	});
 
-	it('roundtrips MiltiPoint features', function () {
+	it('roundtrips MultiPoint features', function () {
 		var json = {
 			"type": "FeatureCollection",
 			"features": [{
@@ -321,7 +423,20 @@ describe("L.LayerGroup#toGeoJSON", function () {
 			}]
 		};
 
-		expect(L.geoJson(json).toGeoJSON()).to.eql(json);
+		var expected = {
+			"type": "FeatureCollection",
+			"features": [{
+				"type": "Feature",
+				"geometry": {
+					"type": "MultiPoint",
+					"coordinates": [[-122.442559, 37.806664], [-122.442838, 37.806636]]
+				},
+				"properties": {
+					"name": "Test MultiPoints"
+				}
+			}]
+		};
+		expect(L.geoJSON(json).toGeoJSON()).to.eql(expected);
 	});
 
 	it("omits layers which do not implement toGeoJSON", function () {
@@ -330,6 +445,29 @@ describe("L.LayerGroup#toGeoJSON", function () {
 		expect(layerGroup.toGeoJSON()).to.eql({
 			type: 'FeatureCollection',
 			features: []
+		});
+	});
+
+	it('should return only one FeatureCollection for nested LayerGroups', function () {
+		var layerGroup = new L.LayerGroup([
+			new L.LayerGroup([new L.Marker([-41.3330287, 173.2008273])]),
+			new L.Marker([-41.273356, 173.287278])
+		]);
+
+		var geoJSON = layerGroup.toGeoJSON();
+
+		expect(geoJSON.features.length).to.eql(2);
+		expect(geoJSON.features[0].type).to.eql("Feature");
+		expect(geoJSON.features[1].type).to.eql("Feature");
+	});
+
+	it("should allow specific precisions", function () {
+		var marker = new L.Marker([10, 20]),
+		    polyline = new L.Polyline([[10, 20], [2, 5]]),
+		    layerGroup = new L.LayerGroup([marker, polyline]);
+		expect(layerGroup.toGeoJSON(3)).to.eql({
+			type: 'FeatureCollection',
+			features: [marker.toGeoJSON(3), polyline.toGeoJSON(3)]
 		});
 	});
 });

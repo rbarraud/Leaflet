@@ -1,31 +1,36 @@
 #!/bin/bash
 
-#make sure deps are up to date
-rm -r node_modules
-npm install
+npm update
 
-# get current version
- VERSION=$(node --eval "console.log(require('./package.json').version);")
-# Build
-git checkout -b build
+VERSION=$(node --eval "console.log(require('./package.json').version);")
+
 npm test || exit 1
-npm run prepublish
-git add dist/leaflet-src.js dist/leaflet.js -f
 
-# create the bower and component files
-copyfiles -u 1 build/*.json ./
-tin -v $VERSION
-git add component.json bower.json -f
+echo "Ready to publish Leaflet version $VERSION."
+echo "Has the version number been bumped?"
+read -n1 -r -p "Press Ctrl+C to cancel, or any other key to continue." key
 
-git commit -m "build $VERSION"
+git checkout -b build
 
-# Tag and push
-echo git tag $VERSION
-# git push --tags git@github.com:leaflet/leaflet.git $VERSION
+export NODE_ENV=release
 
-# # # Publish JS modules
-# npm publish
+npm run-script build
 
-# # # Cleanup
-# git checkout master
-# git branch -D build
+echo "Creating git tag v$VERSION..."
+
+git add dist/leaflet-src.js dist/leaflet.js dist/leaflet-src.esm.js dist/leaflet-src.js.map dist/leaflet.js.map dist/leaflet-src.esm.js.map -f
+
+git commit -m "v$VERSION"
+
+git tag v$VERSION -f
+git push --tags -f
+
+echo "Uploading to NPM..."
+
+npm publish
+
+git checkout master
+git branch -D build
+
+echo "All done."
+echo "Remember to run 'npm run-script integrity' and then commit the changes to the master branch, in order to update the website."
